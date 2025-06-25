@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Resume Builder</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    :root {
+      --bg-color: #f0f2f5;
+      --text-color: #000;
+      --card-bg: #fff;
+      --input-bg: #fff;
+      --btn-bg: #4CAF50;
+    }
+
+    body.dark {
+      --bg-color: #1e1e1e;
+      --text-color: #f5f5f5;
+      --card-bg: #2c2c2c;
+      --input-bg: #3a3a3a;
+      --btn-bg: #28a745;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+      transition: all 0.3s ease;
+    }
+
+    h1 {
+      margin-bottom: 1rem;
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      padding: 0.5rem 1rem;
+      background: var(--btn-bg);
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .container {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+      max-width: 1200px;
+    }
+
+    .form, .preview {
+      flex: 1;
+      min-width: 300px;
+      background: var(--card-bg);
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+
+    input[type="text"], input[type="email"], textarea {
+      width: 100%;
+      padding: 0.6rem;
+      margin-top: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background: var(--input-bg);
+      color: var(--text-color);
+    }
+
+    input[type="checkbox"] {
+      margin-right: 0.5rem;
+    }
+
+    #downloadBtn, #addSectionBtn {
+      margin-top: 1.5rem;
+      padding: 0.8rem 1.5rem;
+      background: var(--btn-bg);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-right: 0.5rem;
+    }
+
+    .resume-section {
+      margin-top: 1rem;
+      padding: 1rem;
+      border: 1px dashed #ccc;
+      border-radius: 8px;
+      cursor: move;
+      background: var(--card-bg);
+    }
+
+    .resume-section.dragging {
+      opacity: 0.5;
+    }
+
+    .toggle-group {
+      margin-top: 1rem;
+      border-top: 1px solid #ccc;
+      padding-top: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="theme-toggle" onclick="toggleTheme()">Toggle Theme</button>
+
+  <h1>Resume Builder</h1>
+
+  <div class="container">
+    <!-- Form -->
+    <div class="form" id="form">
+      <label>Name</label>
+      <input type="text" id="name" oninput="updateResume()" placeholder="Your full name"/>
+
+      <label>Email</label>
+      <input type="email" id="email" oninput="updateResume()" placeholder="you@example.com"/>
+
+      <label>Phone</label>
+      <input type="text" id="phone" oninput="updateResume()" placeholder="+91 1234567890"/>
+
+      <div class="toggle-group">
+        <label><input type="checkbox" checked onchange="toggleSection('education')"> Education</label>
+        <textarea id="education" oninput="updateResume()" rows="3" placeholder="Your education details"></textarea>
+
+        <label><input type="checkbox" checked onchange="toggleSection('skills')"> Skills</label>
+        <textarea id="skills" oninput="updateResume()" rows="3" placeholder="HTML, CSS, JavaScript"></textarea>
+
+        <label><input type="checkbox" checked onchange="toggleSection('projects')"> Projects</label>
+        <textarea id="projects" oninput="updateResume()" rows="3" placeholder="Key projects and tools"></textarea>
+
+        <label><input type="checkbox" checked onchange="toggleSection('experience')"> Experience</label>
+        <textarea id="experience" oninput="updateResume()" rows="3" placeholder="Internships or work experience"></textarea>
+      </div>
+
+      <button id="addSectionBtn" onclick="addCustomSection()">+ Add Custom Section</button>
+      <button id="downloadBtn" onclick="downloadPDF()">Download PDF</button>
+    </div>
+
+    <!-- Preview -->
+    <div class="preview" id="resume">
+      <h2 id="r-name">Your Name</h2>
+      <p id="r-email">you@example.com</p>
+      <p id="r-phone">+91 XXXXXXXXXX</p>
+
+      <div id="section-container">
+        <div class="resume-section" id="r-education-sec" draggable="true">
+          <h3>Education</h3>
+          <p id="r-education"></p>
+        </div>
+
+        <div class="resume-section" id="r-skills-sec" draggable="true">
+          <h3>Skills</h3>
+          <p id="r-skills"></p>
+        </div>
+
+        <div class="resume-section" id="r-projects-sec" draggable="true">
+          <h3>Projects</h3>
+          <p id="r-projects"></p>
+        </div>
+
+        <div class="resume-section" id="r-experience-sec" draggable="true">
+          <h3>Experience</h3>
+          <p id="r-experience"></p>
+        </div>
+
+        <div id="custom-sections"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function updateResume() {
+      document.getElementById('r-name').innerText = document.getElementById('name').value || 'Your Name';
+      document.getElementById('r-email').innerText = document.getElementById('email').value || 'you@example.com';
+      document.getElementById('r-phone').innerText = document.getElementById('phone').value || '+91 XXXXXXXXXX';
+
+      ['education', 'skills', 'projects', 'experience'].forEach(section => {
+        const val = document.getElementById(section).value;
+        document.getElementById('r-' + section).innerText = val || '';
+      });
+
+      document.querySelectorAll('.custom-section-input').forEach(el => {
+        const target = document.getElementById('r-' + el.dataset.sectionId);
+        if (target) target.innerText = el.value;
+      });
+    }
+
+    function toggleSection(section) {
+      const sec = document.getElementById(`r-${section}-sec`);
+      if (sec) sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function addCustomSection() {
+      const title = prompt("Enter section title (e.g., Certifications):");
+      if (!title) return;
+      const sectionId = title.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now();
+
+      const textarea = document.createElement('textarea');
+      textarea.placeholder = `Enter ${title}`;
+      textarea.className = 'custom-section-input';
+      textarea.dataset.sectionId = sectionId;
+      textarea.rows = 3;
+      textarea.oninput = updateResume;
+
+      const label = document.createElement('label');
+      label.innerHTML = `<input type="checkbox" checked onchange="toggleSection('${sectionId}')"> ${title}`;
+      label.appendChild(textarea);
+      document.querySelector('.toggle-group').appendChild(label);
+
+      const sec = document.createElement('div');
+      sec.className = 'resume-section';
+      sec.id = `r-${sectionId}-sec`;
+      sec.setAttribute('draggable', true);
+      sec.innerHTML = `<h3>${title}</h3><p id="r-${sectionId}"></p>`;
+      document.getElementById('section-container').appendChild(sec);
+
+      enableDragAndDrop();
+    }
+
+    function downloadPDF() {
+      const resumeClone = document.getElementById('resume').cloneNode(true);
+      resumeClone.style.width = '800px';
+      resumeClone.style.padding = '20px';
+      resumeClone.querySelectorAll('[draggable]').forEach(el => el.removeAttribute('draggable'));
+
+      const wrapper = document.createElement('div');
+      wrapper.appendChild(resumeClone);
+      document.body.appendChild(wrapper);
+
+      html2pdf().from(resumeClone).set({
+        margin: 0.5,
+        filename: 'Resume.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      }).save().then(() => document.body.removeChild(wrapper));
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle("dark");
+      localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+    }
+
+    window.onload = () => {
+      if (localStorage.getItem("theme") === "dark") {
+        document.body.classList.add("dark");
+      }
+      enableDragAndDrop();
+    };
+
+    function enableDragAndDrop() {
+      const draggables = document.querySelectorAll('.resume-section');
+      const container = document.getElementById('section-container');
+
+      draggables.forEach(draggable => {
+        draggable.addEventListener('dragstart', () => {
+          draggable.classList.add('dragging');
+        });
+
+        draggable.addEventListener('dragend', () => {
+          draggable.classList.remove('dragging');
+        });
+      });
+
+      container.addEventListener('dragover', e => {
+        e.preventDefault();
+        const dragging = document.querySelector('.dragging');
+        const afterElement = getDragAfterElement(container, e.clientY);
+        if (afterElement == null) {
+          container.appendChild(dragging);
+        } else {
+          container.insertBefore(dragging, afterElement);
+        }
+      });
+
+      function getDragAfterElement(container, y) {
+        const elements = [...container.querySelectorAll('.resume-section:not(.dragging)')];
+        return elements.reduce((closest, child) => {
+          const box = child.getBoundingClientRect();
+          const offset = y - box.top - box.height / 2;
+          return offset < 0 && offset > closest.offset
+            ? { offset, element: child }
+            : closest;
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+      }
+    }
+  </script>
+</body>
+</html>
